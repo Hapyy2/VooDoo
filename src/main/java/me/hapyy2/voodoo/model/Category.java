@@ -24,6 +24,6 @@ public class Category {
     private String color;
 
     @Builder.Default
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "category", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     private List<Task> tasks = new ArrayList<>();
 }
