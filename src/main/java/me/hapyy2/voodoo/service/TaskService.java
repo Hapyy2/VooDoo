@@ -3,10 +3,7 @@ package me.hapyy2.voodoo.service;
 import lombok.RequiredArgsConstructor;
 import me.hapyy2.voodoo.dto.TaskDto;
 import me.hapyy2.voodoo.exception.ResourceNotFoundException;
-import me.hapyy2.voodoo.model.Category;
-import me.hapyy2.voodoo.model.Tag;
-import me.hapyy2.voodoo.model.Task;
-import me.hapyy2.voodoo.model.TaskStatus;
+import me.hapyy2.voodoo.model.*;
 import me.hapyy2.voodoo.repository.CategoryRepository;
 import me.hapyy2.voodoo.repository.TagRepository;
 import me.hapyy2.voodoo.repository.TaskRepository;
@@ -27,39 +24,46 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
+    private final UserHelper userHelper;
 
     @Transactional(readOnly = true)
     public Page<TaskDto> getTasks(String search, TaskStatus status, Long categoryId, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter, Pageable pageable) {
+        User user = userHelper.getCurrentUser();
         Page<Task> tasks;
+
         if (search != null && !search.isBlank()) {
-            tasks = taskRepository.searchByTitle(search, pageable);
+            tasks = taskRepository.searchByTitle(search, user, pageable);
         } else if (status != null) {
-            tasks = taskRepository.findByStatus(status, pageable);
+            tasks = taskRepository.findByStatusAndUser(status, user, pageable);
         } else if (categoryId != null) {
-            tasks = taskRepository.findByCategoryId(categoryId, pageable);
+            tasks = taskRepository.findByCategoryIdAndUser(categoryId, user, pageable);
         } else if (dueDateBefore != null) {
-            tasks = taskRepository.findByDueDateBefore(dueDateBefore, pageable);
+            tasks = taskRepository.findByDueDateBeforeAndUser(dueDateBefore, user, pageable);
         } else if (dueDateAfter != null) {
-            tasks = taskRepository.findByDueDateAfter(dueDateAfter, pageable);
+            tasks = taskRepository.findByDueDateAfterAndUser(dueDateAfter, user, pageable);
         } else {
-            tasks = taskRepository.findAll(pageable);
+            tasks = taskRepository.findAllByUser(user, pageable);
         }
+
         return tasks.map(this::mapToDto);
     }
 
     @Transactional(readOnly = true)
     public TaskDto getTaskById(Long id) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        User user = userHelper.getCurrentUser();
+        Task task = taskRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found or access denied"));
         return mapToDto(task);
     }
 
     @Transactional
     public TaskDto createTask(TaskDto dto) {
-        Category category = categoryRepository.findById(dto.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + dto.getCategoryId()));
+        User user = userHelper.getCurrentUser();
 
-        Set<Tag> tags = fetchOrCreateTags(dto.getTags());
+        Category category = categoryRepository.findByIdAndUser(dto.getCategoryId(), user)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found or access denied"));
+
+        Set<Tag> tags = fetchOrCreateTags(dto.getTags(), user);
 
         Task task = Task.builder()
                 .title(dto.getTitle())
@@ -68,6 +72,7 @@ public class TaskService {
                 .dueDate(dto.getDueDate())
                 .category(category)
                 .tags(tags)
+                .user(user)
                 .build();
 
         return mapToDto(taskRepository.save(task));
@@ -75,8 +80,9 @@ public class TaskService {
 
     @Transactional
     public TaskDto updateTask(Long id, TaskDto dto) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        User user = userHelper.getCurrentUser();
+        Task task = taskRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found or access denied"));
 
         task.setTitle(dto.getTitle());
         task.setDescription(dto.getDescription());
@@ -87,13 +93,13 @@ public class TaskService {
         }
 
         if (dto.getCategoryId() != null) {
-            Category category = categoryRepository.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + dto.getCategoryId()));
+            Category category = categoryRepository.findByIdAndUser(dto.getCategoryId(), user)
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found or access denied"));
             task.setCategory(category);
         }
 
         if (dto.getTags() != null) {
-            Set<Tag> tags = fetchOrCreateTags(dto.getTags());
+            Set<Tag> tags = fetchOrCreateTags(dto.getTags(), user);
             task.setTags(tags);
         }
 
@@ -102,21 +108,23 @@ public class TaskService {
 
     @Transactional
     public void deleteTask(Long id) {
-        if (!taskRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Task not found with id: " + id);
-        }
-        taskRepository.deleteById(id);
+        User user = userHelper.getCurrentUser();
+        Task task = taskRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found or access denied"));
+
+        taskRepository.delete(task);
     }
 
-    private Set<Tag> fetchOrCreateTags(Set<String> tagNames) {
+    private Set<Tag> fetchOrCreateTags(Set<String> tagNames, User user) {
         if (tagNames == null || tagNames.isEmpty()) {
             return new HashSet<>();
         }
-
         Set<Tag> tags = new HashSet<>();
         for (String name : tagNames) {
-            Tag tag = tagRepository.findByName(name)
-                    .orElseGet(() -> tagRepository.save(Tag.builder().name(name).build()));
+            Tag tag = tagRepository.findByNameAndUser(name, user)
+                    .orElseGet(() -> tagRepository.save(
+                            Tag.builder().name(name).user(user).build()
+                    ));
             tags.add(tag);
         }
         return tags;

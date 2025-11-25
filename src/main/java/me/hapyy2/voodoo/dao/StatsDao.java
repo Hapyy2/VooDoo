@@ -19,14 +19,14 @@ public class StatsDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<TaskStatsDto> getTaskCountByStatus() {
-        String sql = "SELECT status, COUNT(*) as cnt FROM tasks GROUP BY status";
-        return jdbcTemplate.query(sql, new TaskStatsRowMapper());
+    public List<TaskStatsDto> getTaskCountByStatus(Long userId) {
+        String sql = "SELECT status, COUNT(*) as cnt FROM tasks WHERE user_id = ? GROUP BY status";
+        return jdbcTemplate.query(sql, new TaskStatsRowMapper(), userId);
     }
 
-    public int updateTaskStatus(Long taskId, String newStatus) {
-        String sql = "UPDATE tasks SET status = ? WHERE id = ?";
-        return jdbcTemplate.update(sql, newStatus, taskId);
+    public int updateTaskStatus(Long taskId, String newStatus, Long userId) {
+        String sql = "UPDATE tasks SET status = ? WHERE id = ? AND user_id = ?";
+        return jdbcTemplate.update(sql, newStatus, taskId, userId);
     }
 
     private static class TaskStatsRowMapper implements RowMapper<TaskStatsDto> {
@@ -34,10 +34,8 @@ public class StatsDao {
         public TaskStatsDto mapRow(ResultSet rs, int rowNum) throws SQLException {
             String statusString = rs.getString("status");
             if (statusString == null) return new TaskStatsDto(null, 0L);
-
             TaskStatus statusEnum = TaskStatus.valueOf(statusString);
             Long count = rs.getLong("cnt");
-
             return new TaskStatsDto(statusEnum, count);
         }
     }

@@ -5,6 +5,7 @@ import me.hapyy2.voodoo.dto.CategoryDto;
 import me.hapyy2.voodoo.exception.ResourceNotFoundException;
 import me.hapyy2.voodoo.model.Category;
 import me.hapyy2.voodoo.model.Task;
+import me.hapyy2.voodoo.model.User;
 import me.hapyy2.voodoo.repository.CategoryRepository;
 import me.hapyy2.voodoo.repository.TaskRepository;
 import org.springframework.stereotype.Service;
@@ -19,26 +20,34 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final TaskRepository taskRepository;
+    private final UserHelper userHelper; // Nasz pomocnik do wyciągania Usera
 
     @Transactional(readOnly = true)
     public List<CategoryDto> getAllCategories() {
-        return categoryRepository.findAll().stream()
+        User user = userHelper.getCurrentUser();
+        // Pobieramy tylko kategorie tego użytkownika
+        return categoryRepository.findAllByUser(user).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public CategoryDto getCategoryById(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+        User user = userHelper.getCurrentUser();
+        // Szukamy po ID oraz Userze - zabezpieczenie przed dostępem do cudzych danych
+        Category category = categoryRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found or access denied"));
         return mapToDto(category);
     }
 
     @Transactional
     public CategoryDto createCategory(CategoryDto dto) {
+        User user = userHelper.getCurrentUser();
+
         Category category = Category.builder()
                 .name(dto.getName())
                 .color(dto.getColor())
+                .user(user) // Przypisujemy właściciela
                 .build();
 
         return mapToDto(categoryRepository.save(category));
@@ -46,8 +55,10 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto updateCategory(Long id, CategoryDto dto) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+        User user = userHelper.getCurrentUser();
+
+        Category category = categoryRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found or access denied"));
 
         category.setName(dto.getName());
         category.setColor(dto.getColor());
@@ -57,11 +68,13 @@ public class CategoryService {
 
     @Transactional
     public void deleteCategory(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+        User user = userHelper.getCurrentUser();
 
+        Category category = categoryRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found or access denied"));
+
+        // Odpinanie zadań (tylko tych należących do kategorii i usera)
         List<Task> tasks = category.getTasks();
-
         for (Task task : tasks) {
             task.setCategory(null);
             taskRepository.save(task);
