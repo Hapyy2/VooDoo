@@ -5,12 +5,17 @@ import lombok.RequiredArgsConstructor;
 import me.hapyy2.voodoo.dto.TaskDto;
 import me.hapyy2.voodoo.model.TaskStatus;
 import me.hapyy2.voodoo.service.TaskService;
+import me.hapyy2.voodoo.service.FileService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +25,7 @@ import java.time.LocalDateTime;
 public class TaskController {
 
     private final TaskService taskService;
+    private final FileService fileService;
 
     @GetMapping
     public ResponseEntity<Page<TaskDto>> getTasks(
@@ -54,5 +60,15 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/export/csv")
+    public ResponseEntity<Resource> exportTasksToCsv() {
+        InputStreamResource file = new InputStreamResource(fileService.exportTasksToCsv());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tasks.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(file);
     }
 }
