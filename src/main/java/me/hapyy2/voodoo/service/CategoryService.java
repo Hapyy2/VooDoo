@@ -20,12 +20,11 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final TaskRepository taskRepository;
-    private final UserHelper userHelper; // Nasz pomocnik do wyciągania Usera
+    private final UserHelper userHelper;
 
     @Transactional(readOnly = true)
     public List<CategoryDto> getAllCategories() {
         User user = userHelper.getCurrentUser();
-        // Pobieramy tylko kategorie tego użytkownika
         return categoryRepository.findAllByUser(user).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -34,7 +33,6 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public CategoryDto getCategoryById(Long id) {
         User user = userHelper.getCurrentUser();
-        // Szukamy po ID oraz Userze - zabezpieczenie przed dostępem do cudzych danych
         Category category = categoryRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found or access denied"));
         return mapToDto(category);
@@ -47,7 +45,7 @@ public class CategoryService {
         Category category = Category.builder()
                 .name(dto.getName())
                 .color(dto.getColor())
-                .user(user) // Przypisujemy właściciela
+                .user(user)
                 .build();
 
         return mapToDto(categoryRepository.save(category));
@@ -73,7 +71,6 @@ public class CategoryService {
         Category category = categoryRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found or access denied"));
 
-        // Odpinanie zadań (tylko tych należących do kategorii i usera)
         List<Task> tasks = category.getTasks();
         for (Task task : tasks) {
             task.setCategory(null);
