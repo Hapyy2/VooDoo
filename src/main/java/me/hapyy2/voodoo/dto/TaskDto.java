@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import me.hapyy2.voodoo.model.TaskStatus;
 
+import java.util.Set;
 import java.time.LocalDateTime;
 
 @Data
@@ -35,4 +36,5 @@ public class TaskDto {
     private Long categoryId;
 
     private String categoryName;
+    private Set<String> tags;
 }
