@@ -10,6 +10,13 @@ import me.hapyy2.voodoo.service.AuthService;
 import me.hapyy2.voodoo.service.CategoryService;
 import me.hapyy2.voodoo.service.ReportService;
 import me.hapyy2.voodoo.service.TaskService;
+import me.hapyy2.voodoo.service.FileService;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -32,6 +39,7 @@ public class MvcController {
     private final TaskService taskService;
     private final CategoryService categoryService;
     private final ReportService reportService;
+    private final FileService fileService;
 
     @GetMapping("/login")
     public String login() {
@@ -107,6 +115,7 @@ public class MvcController {
             @Valid @ModelAttribute("task") TaskDto dto,
             BindingResult result,
             @RequestParam(required = false) String tagsInput,
+            @RequestParam(value = "attachment", required = false) MultipartFile attachment,
             Model model
     ) {
         if (result.hasErrors()) {
@@ -121,9 +130,44 @@ public class MvcController {
                     .collect(Collectors.toSet()));
         }
 
+        if (attachment != null && !attachment.isEmpty()) {
+            String storageFilename = fileService.storeFile(attachment);
+            dto.setAttachmentFilename(storageFilename);
+
+            dto.setOriginalFilename(attachment.getOriginalFilename());
+        }
+
         if (dto.getId() == null) taskService.createTask(dto);
         else taskService.updateTask(dto.getId(), dto);
+
         return "redirect:/tasks";
+    }
+
+    @GetMapping("/tasks/download/{id}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
+        TaskDto task = taskService.getTaskById(id);
+
+        if (task.getAttachmentFilename() == null) {
+            throw new RuntimeException("File not found");
+        }
+
+        Resource resource = fileService.loadFileAsResource(task.getAttachmentFilename());
+
+        String displayFilename = task.getOriginalFilename() != null ? task.getOriginalFilename() : task.getAttachmentFilename();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + displayFilename + "\"")
+                .body(resource);
+    }
+
+    @GetMapping("/api/tasks/export/pdf")
+    public ResponseEntity<Resource> exportTasksToPdf() {
+        InputStreamResource file = new InputStreamResource(fileService.exportTasksToPdf());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tasks_report.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file);
     }
 
     @GetMapping("/tasks/delete/{id}")

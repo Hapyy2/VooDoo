@@ -12,7 +12,7 @@
                     </h4>
                 </div>
                 <div class="card-body p-4">
-                    <form th:action="@{/tasks/save}" th:object="${task}" method="post">
+                    <form th:action="@{/tasks/save}" th:object="${task}" method="post" enctype="multipart/form-data">
                         <input type="hidden" th:field="*{id}">
 
                         <div class="mb-3">
@@ -59,6 +59,19 @@
                                    placeholder="e.g. Urgent, Work, Java"
                                    th:value="${task.tags != null ? #strings.listJoin(task.tags, ', ') : ''}">
                             <small class="text-muted">Type tags separated by commas. They will be created automatically.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Attachment</label>
+                            <input type="file" name="attachment" class="form-control">
+
+                            <div th:if="${task.attachmentFilename != null}" class="mt-2">
+                                <i class="bi bi-paperclip"></i> Current file:
+                                <span th:text="${task.originalFilename != null ? task.originalFilename : task.attachmentFilename}" class="fw-bold"></span>
+
+                                <input type="hidden" th:field="*{attachmentFilename}">
+                                <input type="hidden" th:field="*{originalFilename}">
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2 border-top pt-3">

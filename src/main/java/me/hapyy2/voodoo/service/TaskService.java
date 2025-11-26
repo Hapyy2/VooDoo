@@ -73,6 +73,8 @@ public class TaskService {
                 .category(category)
                 .tags(tags)
                 .user(user)
+                .attachmentFilename(dto.getAttachmentFilename())
+                .originalFilename(dto.getOriginalFilename())
                 .build();
 
         return mapToDto(taskRepository.save(task));
@@ -89,6 +91,13 @@ public class TaskService {
         task.setTitle(dto.getTitle());
         task.setDescription(dto.getDescription());
         task.setDueDate(dto.getDueDate());
+
+        if (dto.getAttachmentFilename() != null) {
+            task.setAttachmentFilename(dto.getAttachmentFilename());
+        }
+        if (dto.getOriginalFilename() != null) {
+            task.setOriginalFilename(dto.getOriginalFilename());
+        }
 
         if (dto.getStatus() != null) {
             task.setStatus(dto.getStatus());
@@ -163,6 +172,8 @@ public class TaskService {
                 .categoryId(task.getCategory() != null ? task.getCategory().getId() : null)
                 .categoryName(task.getCategory() != null ? task.getCategory().getName() : "No Category")
                 .tags(task.getTags().stream().map(Tag::getName).collect(Collectors.toSet()))
+                .attachmentFilename(task.getAttachmentFilename())
+                .originalFilename(task.getOriginalFilename())
                 .build();
     }
 }

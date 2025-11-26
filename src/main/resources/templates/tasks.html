@@ -8,6 +8,9 @@
             <a href="/api/tasks/export/csv" target="_blank" class="btn btn-outline-success me-2">
                 <i class="bi bi-filetype-csv"></i> Export CSV
             </a>
+            <a href="/api/tasks/export/pdf" target="_blank" class="btn btn-outline-danger me-2">
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </a>
             <a href="/tasks/new" class="btn btn-primary">
                 <i class="bi bi-plus-lg"></i> New Task
             </a>
@@ -90,6 +93,22 @@
                     <td>
                         <span th:if="${task.dueDate}" th:text="${#temporals.format(task.dueDate, 'yyyy-MM-dd HH:mm')}"></span>
                         <span th:unless="${task.dueDate}" class="text-muted">-</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold">
+                            <span th:text="${task.title}">Title</span>
+
+                            <a th:if="${task.attachmentFilename != null}"
+                               th:href="@{/tasks/download/{id}(id=${task.id})}"
+                               class="ms-2 text-decoration-none"
+                               th:title="${task.originalFilename != null ? task.originalFilename : 'Download attachment'}">
+
+                                <i class="bi bi-paperclip text-primary"></i>
+                                <span class="small text-muted fw-normal"
+                                      th:text="${task.originalFilename != null ? task.originalFilename : 'File'}"></span>
+                            </a>
+                        </div>
+                        <small class="text-muted" th:text="${task.description}">Desc</small>
                     </td>
                     <td class="text-end">
                         <div class="btn-group" role="group">

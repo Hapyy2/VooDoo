@@ -37,4 +37,7 @@ public class TaskDto {
 
     private String categoryName;
     private Set<String> tags;
+
+    private String attachmentFilename;
+    private String originalFilename;
 }

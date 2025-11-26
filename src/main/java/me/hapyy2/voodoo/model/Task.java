@@ -57,4 +57,8 @@ public class Task {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    private String attachmentFilename;
+
+    private String originalFilename;
 }
