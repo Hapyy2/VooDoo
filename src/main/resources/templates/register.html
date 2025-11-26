@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::section})}">
+<body>
+<section>
+    <div class="row justify-content-center align-items-center" style="min-height: 60vh;">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg">
+                <div class="card-header bg-warning text-dark text-center py-3">
+                    <h4 class="mb-0"><i class="bi bi-person-plus-fill"></i> Create Account</h4>
+                </div>
+                <div class="card-body p-4">
+
+                    <div th:if="${error}" class="alert alert-danger" th:text="${error}">Error message</div>
+
+                    <form th:action="@{/register}" th:object="${user}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Username</label>
+                            <input type="text" th:field="*{username}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''"
+                                   placeholder="Choose a unique username">
+                            <div class="invalid-feedback" th:errors="*{username}">Error</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Password</label>
+                            <input type="password" th:field="*{password}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                                   placeholder="Minimum 6 characters">
+                            <div class="invalid-feedback" th:errors="*{password}">Error</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-dark btn-lg">Register</button>
+                            <a href="/login" class="btn btn-outline-secondary">Back to Login</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

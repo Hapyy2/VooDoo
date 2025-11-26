@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::section})}">
+<body>
+<section>
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h4 class="mb-0">
+                        <i class="bi" th:classappend="${task.id == null} ? 'bi-plus-circle' : 'bi-pencil-square'"></i>
+                        <span th:text="${task.id == null} ? 'Create New Task' : 'Edit Task'">Task</span>
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/tasks/save}" th:object="${task}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Title <span class="text-danger">*</span></label>
+                            <input type="text" th:field="*{title}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''">
+                            <div class="invalid-feedback" th:errors="*{title}">Error</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea th:field="*{description}" class="form-control" rows="4"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                                <select th:field="*{categoryId}" class="form-select"
+                                        th:classappend="${#fields.hasErrors('categoryId')} ? 'is-invalid' : ''">
+                                    <option value="" disabled selected>Select Category...</option>
+                                    <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"></option>
+                                </select>
+                                <div class="invalid-feedback" th:errors="*{categoryId}">Selection required</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Status</label>
+                                <select th:field="*{status}" class="form-select">
+                                    <option th:each="s : ${T(me.hapyy2.voodoo.model.TaskStatus).values()}"
+                                            th:value="${s}" th:text="${s}"></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Due Date</label>
+                            <input type="datetime-local" th:field="*{dueDate}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('dueDate')} ? 'is-invalid' : ''">
+                            <div class="invalid-feedback" th:errors="*{dueDate}">Must be in the future/present</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Tags (separated by comma)</label>
+                            <input type="text" name="tagsInput" class="form-control"
+                                   placeholder="e.g. Urgent, Work, Java"
+                                   th:value="${task.tags != null ? #strings.listJoin(task.tags, ', ') : ''}">
+                            <small class="text-muted">Type tags separated by commas. They will be created automatically.</small>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                            <a href="/tasks" class="btn btn-light border">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save"></i> Save Task
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

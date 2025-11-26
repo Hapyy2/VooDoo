@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::section})}">
+<body>
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-tags"></i> Categories</h2>
+        <a href="/categories/new" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Category</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Color</th>
+                    <th>Name</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${categories.empty}">
+                    <td colspan="3" class="text-center py-4 text-muted">No categories defined yet.</td>
+                </tr>
+                <tr th:each="cat : ${categories}">
+                    <td style="width: 100px;">
+                        <span class="badge rounded-pill border"
+                              th:style="'background-color:' + ${cat.color} + '; color: #fff; text-shadow: 0 0 2px #000;'">
+                            <span th:text="${cat.color}"></span>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="fw-bold" th:text="${cat.name}">Name</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group" role="group">
+                            <a th:href="@{/categories/edit/{id}(id=${cat.id})}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            <a th:href="@{/categories/delete/{id}(id=${cat.id})}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Delete this category? Tasks will remain but will be uncategorized.')"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

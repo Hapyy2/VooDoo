@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::section})}">
+<body>
+<section>
+    <div class="d-flex align-items-center mb-4">
+        <h2 class="me-3"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+        <span class="text-muted">Overview of your productivity</span>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100 shadow-sm">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="display-4 mb-2"><i class="bi bi-layers"></i></div>
+                    <h2 class="display-6 fw-bold" th:text="${stats['total']}">0</h2>
+                    <div class="text-uppercase small letter-spacing-1">Total Tasks</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white h-100 shadow-sm">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="display-4 mb-2"><i class="bi bi-hourglass"></i></div>
+                    <h2 class="display-6 fw-bold" th:text="${stats['todo']}">0</h2>
+                    <div class="text-uppercase small letter-spacing-1">To Do</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100 shadow-sm">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="display-4 mb-2"><i class="bi bi-tools"></i></div>
+                    <h2 class="display-6 fw-bold" th:text="${stats['inProgress']}">0</h2>
+                    <div class="text-uppercase small letter-spacing-1">In Progress</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100 shadow-sm">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <div class="display-4 mb-2"><i class="bi bi-check-circle-fill"></i></div>
+                    <h2 class="display-6 fw-bold" th:text="${stats['done']}">0</h2>
+                    <div class="text-uppercase small letter-spacing-1">Completed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4 shadow-sm">
+        <h4 class="mb-3">Completion Rate</h4>
+        <div class="progress" style="height: 35px; font-size: 1.1rem;">
+            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                 role="progressbar"
+                 th:style="'width: ' + ${stats['percentage']} + '%'"
+                 th:aria-valuenow="${stats['percentage']}"
+                 aria-valuemin="0" aria-valuemax="100">
+                <span th:text="${stats['percentage']} + '%'">0%</span>
+            </div>
+        </div>
+        <div class="mt-2 text-muted text-end small">Calculated based on 'Done' vs Total tasks.</div>
+    </div>
+
+    <div class="mt-5 text-end">
+        <a href="/tasks" class="btn btn-outline-dark btn-lg">Go to Tasks &rarr;</a>
+    </div>
+</section>
+</body>
+</html>
