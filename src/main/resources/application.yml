@@ -13,9 +13,14 @@ spring:
       ddl-auto: update
     show-sql: true
     open-in-view: true
+    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
+
+  sql:
+    init:
+      mode: always
 
   servlet:
     multipart:
