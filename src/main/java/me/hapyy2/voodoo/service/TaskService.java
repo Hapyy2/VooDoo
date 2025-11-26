@@ -84,6 +84,8 @@ public class TaskService {
         Task task = taskRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found or access denied"));
 
+        Set<Tag> oldTags = new HashSet<>(task.getTags());
+
         task.setTitle(dto.getTitle());
         task.setDescription(dto.getDescription());
         task.setDueDate(dto.getDueDate());
@@ -99,11 +101,18 @@ public class TaskService {
         }
 
         if (dto.getTags() != null) {
-            Set<Tag> tags = fetchOrCreateTags(dto.getTags(), user);
-            task.setTags(tags);
+            Set<Tag> newTags = fetchOrCreateTags(dto.getTags(), user);
+            task.setTags(newTags);
         }
 
-        return mapToDto(taskRepository.save(task));
+        Task savedTask = taskRepository.save(task);
+
+        taskRepository.flush();
+
+        oldTags.removeAll(savedTask.getTags());
+        cleanupOrphanTags(oldTags);
+
+        return mapToDto(savedTask);
     }
 
     @Transactional
@@ -112,7 +121,21 @@ public class TaskService {
         Task task = taskRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found or access denied"));
 
+        Set<Tag> tagsToCheck = new HashSet<>(task.getTags());
+
         taskRepository.delete(task);
+        taskRepository.flush();
+
+        cleanupOrphanTags(tagsToCheck);
+    }
+
+    private void cleanupOrphanTags(Set<Tag> tags) {
+        for (Tag tag : tags) {
+            long count = tagRepository.countTasksByTagId(tag.getId());
+            if (count == 0) {
+                tagRepository.delete(tag);
+            }
+        }
     }
 
     private Set<Tag> fetchOrCreateTags(Set<String> tagNames, User user) {
