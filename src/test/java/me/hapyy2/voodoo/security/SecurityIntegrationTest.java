@@ -47,4 +47,5 @@ class SecurityIntegrationTest {
         mockMvc.perform(get("/swagger-ui/index.html"))
                 .andExpect(status().isOk());
     }
+
 }
