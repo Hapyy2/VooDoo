@@ -1,6 +1,5 @@
 package me.hapyy2.voodoo.dto;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -9,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import me.hapyy2.voodoo.model.TaskStatus;
+import me.hapyy2.voodoo.validation.BannedWords;
 
 import java.util.Set;
 import java.time.LocalDateTime;
@@ -23,13 +23,13 @@ public class TaskDto {
 
     @NotBlank(message = "Title is required")
     @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
+    @BannedWords(message = "Title contains forbidden words (e.g. admin, root)")
     private String title;
 
     private String description;
 
     private TaskStatus status;
 
-    @FutureOrPresent(message = "Due date cannot be in the past")
     private LocalDateTime dueDate;
 
     @NotNull(message = "Category ID is required")

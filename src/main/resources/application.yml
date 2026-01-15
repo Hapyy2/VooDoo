@@ -34,3 +34,4 @@ logging:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+  packages-to-scan: me.hapyy2.voodoo.controller

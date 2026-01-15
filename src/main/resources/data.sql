@@ -8,46 +8,50 @@ ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO categories (name, color, user_id)
 VALUES ('Praca', '#0d6efd', (SELECT id FROM users WHERE username = 'demo_user'))
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name, user_id) DO NOTHING;
 
 INSERT INTO categories (name, color, user_id)
 VALUES ('Dom', '#198754', (SELECT id FROM users WHERE username = 'demo_user'))
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name, user_id) DO NOTHING;
 
 INSERT INTO categories (name, color, user_id)
 VALUES ('Inne', '#6c757d', (SELECT id FROM users WHERE username = 'demo_user'))
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name, user_id) DO NOTHING;
 
 INSERT INTO tasks (title, description, status, due_date, category_id, user_id, created_at)
 VALUES
 ('Dokończyć projekt VooDoo', 'Muszę napisać testy i wdrożyć data.sql', 'IN_PROGRESS', '2025-12-31 23:59:00',
- (SELECT id FROM categories WHERE name = 'Praca'),
+ (SELECT id FROM categories WHERE name = 'Praca' AND user_id = (SELECT id FROM users WHERE username = 'demo_user')),
  (SELECT id FROM users WHERE username = 'demo_user'),
  NOW());
 
 INSERT INTO tasks (title, description, status, due_date, category_id, user_id, created_at)
 VALUES
 ('Kupić mleko', 'I przy okazji chleb', 'TODO', '2025-12-30 10:00:00',
- (SELECT id FROM categories WHERE name = 'Dom'),
+ (SELECT id FROM categories WHERE name = 'Dom' AND user_id = (SELECT id FROM users WHERE username = 'demo_user')),
  (SELECT id FROM users WHERE username = 'demo_user'),
  NOW());
 
 INSERT INTO tasks (title, description, status, due_date, category_id, user_id, created_at)
 VALUES
 ('Zrobić pranie', 'Czarne rzeczy', 'DONE', '2023-01-01 10:00:00',
- (SELECT id FROM categories WHERE name = 'Dom'),
+ (SELECT id FROM categories WHERE name = 'Dom' AND user_id = (SELECT id FROM users WHERE username = 'demo_user')),
  (SELECT id FROM users WHERE username = 'demo_user'),
  NOW());
 
 INSERT INTO tags (name, user_id)
 VALUES ('Pilne', (SELECT id FROM users WHERE username = 'demo_user'))
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name, user_id) DO NOTHING;
 
 INSERT INTO tags (name, user_id)
 VALUES ('Java', (SELECT id FROM users WHERE username = 'demo_user'))
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name, user_id) DO NOTHING;
 
 INSERT INTO task_tags (task_id, tag_id)
 VALUES
-((SELECT id FROM tasks WHERE title = 'Dokończyć projekt VooDoo' LIMIT 1), (SELECT id FROM tags WHERE name = 'Pilne')),
-((SELECT id FROM tasks WHERE title = 'Dokończyć projekt VooDoo' LIMIT 1), (SELECT id FROM tags WHERE name = 'Java'));
+((SELECT id FROM tasks WHERE title = 'Dokończyć projekt VooDoo' LIMIT 1), (SELECT id FROM tags WHERE name = 'Pilne' AND user_id = (SELECT id FROM users WHERE username = 'demo_user'))),
+((SELECT id FROM tasks WHERE title = 'Dokończyć projekt VooDoo' LIMIT 1), (SELECT id FROM tags WHERE name = 'Java' AND user_id = (SELECT id FROM users WHERE username = 'demo_user')))
+ON CONFLICT DO NOTHING;
+
+INSERT INTO audit_logs (user_id, action, timestamp)
+VALUES ((SELECT id FROM users WHERE username = 'demo_user'), 'INIT_DB', NOW());

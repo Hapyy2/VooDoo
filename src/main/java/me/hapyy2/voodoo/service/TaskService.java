@@ -27,23 +27,20 @@ public class TaskService {
     private final UserHelper userHelper;
 
     @Transactional(readOnly = true)
-    public Page<TaskDto> getTasks(String search, TaskStatus status, Long categoryId, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter, Pageable pageable) {
+    public Page<TaskDto> getTasks(String search, TaskStatus status, Long categoryId,
+                                  LocalDateTime dueDateAfter, LocalDateTime dueDateBefore,
+                                  Pageable pageable) {
         User user = userHelper.getCurrentUser();
-        Page<Task> tasks;
 
-        if (search != null && !search.isBlank()) {
-            tasks = taskRepository.searchByTitle(search, user, pageable);
-        } else if (status != null) {
-            tasks = taskRepository.findByStatusAndUser(status, user, pageable);
-        } else if (categoryId != null) {
-            tasks = taskRepository.findByCategoryIdAndUser(categoryId, user, pageable);
-        } else if (dueDateBefore != null) {
-            tasks = taskRepository.findByDueDateBeforeAndUser(dueDateBefore, user, pageable);
-        } else if (dueDateAfter != null) {
-            tasks = taskRepository.findByDueDateAfterAndUser(dueDateAfter, user, pageable);
-        } else {
-            tasks = taskRepository.findAllByUser(user, pageable);
-        }
+        Page<Task> tasks = taskRepository.searchAndFilter(
+                search,
+                status,
+                categoryId,
+                dueDateAfter,
+                dueDateBefore,
+                user,
+                pageable
+        );
 
         return tasks.map(this::mapToDto);
     }

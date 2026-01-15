@@ -33,18 +33,29 @@ public class TaskController {
     private final TaskService taskService;
     private final FileService fileService;
 
-    @Operation(summary = "Get list of tasks", description = "Returns a paginated list of tasks belonging to the authenticated user. Supports filtering by status, category, due date, and title.")
+    @Operation(summary = "Search and filter tasks",
+            description = "Get tasks with optional filtering. Filters can be combined (AND logic). Pagination defaults to 10 items.")
     @GetMapping
     public ResponseEntity<Page<TaskDto>> getTasks(
-            @Parameter(description = "Search keyword for title") @RequestParam(required = false) String search,
-            @Parameter(description = "Filter by status (TODO, IN_PROGRESS, DONE)") @RequestParam(required = false) TaskStatus status,
-            @Parameter(description = "Filter by Category ID") @RequestParam(required = false) Long categoryId,
-            @Parameter(description = "Filter tasks due before this date (Format: YYYY-MM-DDTHH:mm:ss)") @RequestParam(required = false) LocalDateTime dueDateBefore,
-            @Parameter(description = "Filter tasks due after this date") @RequestParam(required = false) LocalDateTime dueDateAfter,
-            @Parameter(hidden = true) @PageableDefault(size = 10) Pageable pageable
+            @Parameter(description = "Search by title (case insensitive, partial match)")
+            @RequestParam(required = false) String search,
+
+            @Parameter(description = "Filter by task status (TODO, IN_PROGRESS, DONE)")
+            @RequestParam(required = false) TaskStatus status,
+
+            @Parameter(description = "Filter by category ID")
+            @RequestParam(required = false) Long categoryId,
+
+            @Parameter(description = "Filter tasks due after this date (ISO-8601)")
+            @RequestParam(required = false) LocalDateTime dueDateAfter,
+
+            @Parameter(description = "Filter tasks due before this date (ISO-8601)")
+            @RequestParam(required = false) LocalDateTime dueDateBefore,
+
+            @Parameter(description = "Pagination and Sorting settings")
+            @PageableDefault(size = 10, sort = "dueDate") Pageable pageable
     ) {
-        Page<TaskDto> tasks = taskService.getTasks(search, status, categoryId, dueDateBefore, dueDateAfter, pageable);
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.getTasks(search, status, categoryId, dueDateAfter, dueDateBefore, pageable));
     }
 
     @Operation(summary = "Get task by ID", description = "Returns details of a specific task. Access is denied if the task belongs to another user.")

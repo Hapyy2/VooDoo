@@ -1,14 +1,10 @@
 package me.hapyy2.voodoo.dao;
 
-import me.hapyy2.voodoo.dto.TaskStatsDto;
-import me.hapyy2.voodoo.model.TaskStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @Component
 public class StatsDao {
@@ -19,24 +15,34 @@ public class StatsDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<TaskStatsDto> getTaskCountByStatus(Long userId) {
-        String sql = "SELECT status, COUNT(*) as cnt FROM tasks WHERE user_id = ? GROUP BY status";
-        return jdbcTemplate.query(sql, new TaskStatsRowMapper(), userId);
+    public Map<String, Object> getAggregatedStats(Long userId) {
+        String sql = """
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'TODO' THEN 1 ELSE 0 END) as todo,
+                SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) as in_progress,
+                SUM(CASE WHEN status = 'DONE' THEN 1 ELSE 0 END) as done
+            FROM tasks 
+            WHERE user_id = ?
+        """;
+        return jdbcTemplate.queryForMap(sql, userId);
     }
 
-    public int updateTaskStatus(Long taskId, String newStatus, Long userId) {
-        String sql = "UPDATE tasks SET status = ? WHERE id = ? AND user_id = ?";
-        return jdbcTemplate.update(sql, newStatus, taskId, userId);
+    // --- CREATE (Audit Log) ---
+    public void logAudit(Long userId, String action) {
+        String sql = "INSERT INTO audit_logs (user_id, action, timestamp) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, userId, action, LocalDateTime.now());
     }
 
-    private static class TaskStatsRowMapper implements RowMapper<TaskStatsDto> {
-        @Override
-        public TaskStatsDto mapRow(ResultSet rs, int rowNum) throws SQLException {
-            String statusString = rs.getString("status");
-            if (statusString == null) return new TaskStatsDto(null, 0L);
-            TaskStatus statusEnum = TaskStatus.valueOf(statusString);
-            Long count = rs.getLong("cnt");
-            return new TaskStatsDto(statusEnum, count);
-        }
+    // --- UPDATE (Audit Log) ---
+    public int anonymizeOldLogs(Long userId) {
+        String sql = "UPDATE audit_logs SET action = 'ANONYMIZED' WHERE user_id = ? AND timestamp < ?";
+        return jdbcTemplate.update(sql, userId, LocalDateTime.now().minusDays(30));
+    }
+
+    // --- DELETE (Audit Log) ---
+    public int deleteOldLogs() {
+        String sql = "DELETE FROM audit_logs WHERE timestamp < ?";
+        return jdbcTemplate.update(sql, LocalDateTime.now().minusDays(365));
     }
 }

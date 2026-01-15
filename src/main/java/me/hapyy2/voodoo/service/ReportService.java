@@ -2,13 +2,11 @@ package me.hapyy2.voodoo.service;
 
 import lombok.RequiredArgsConstructor;
 import me.hapyy2.voodoo.dao.StatsDao;
-import me.hapyy2.voodoo.dto.TaskStatsDto;
 import me.hapyy2.voodoo.model.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -18,26 +16,18 @@ public class ReportService {
     private final StatsDao statsDao;
     private final UserHelper userHelper;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> getDashboardStats() {
         User currentUser = userHelper.getCurrentUser();
 
-        List<TaskStatsDto> stats = statsDao.getTaskCountByStatus(currentUser.getId());
+        statsDao.logAudit(currentUser.getId(), "DASHBOARD_VIEW");
 
-        long total = 0;
-        long done = 0;
-        long todo = 0;
-        long inProgress = 0;
+        Map<String, Object> dbStats = statsDao.getAggregatedStats(currentUser.getId());
 
-        for (TaskStatsDto stat : stats) {
-            if (stat.getStatus() == null) continue;
-            total += stat.getCount();
-            switch (stat.getStatus()) {
-                case DONE -> done += stat.getCount();
-                case TODO -> todo += stat.getCount();
-                case IN_PROGRESS -> inProgress += stat.getCount();
-            }
-        }
+        long total = ((Number) dbStats.getOrDefault("total", 0)).longValue();
+        long done = ((Number) dbStats.getOrDefault("done", 0)).longValue();
+        long todo = ((Number) dbStats.getOrDefault("todo", 0)).longValue();
+        long inProgress = ((Number) dbStats.getOrDefault("in_progress", 0)).longValue();
 
         double progressPercentage = (total == 0) ? 0 : ((double) done / total) * 100;
 
